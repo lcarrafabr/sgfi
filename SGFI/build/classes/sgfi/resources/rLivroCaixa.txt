@@ -1,0 +1,33 @@
+
+                                  EXTRATO DE CONTA
+
+  Código Data    Documen Número  Histórico               Pessoa             Valor
+  CAIXA I
+
+  000043 04/05/2 Pedido  0000002 Lançamento em Dinheiro  DOUGLAS TYBEL    -854,75
+  000042 04/05/2 Pedido  0000002 Lançamento em Banco     DOUGLAS TYBEL    -2.000,
+  000041 03/05/2 Pedido  0000003 Lançamento em Dinheiro  AIDRAN DE JESUS T-2.000,
+  000040 03/05/2 Pedido  0000003 Lançamento em Banco     AIDRAN DE JESUS T-2.000,
+  000039 03/05/2 Pedido  0000001 Lançamento em Dinheiro  DOUGLAS TYBEL      50,00
+  000038 03/05/2 Pedido  0000001 Lançamento em Dinheiro  DOUGLAS TYBEL     250,00
+  000037 30/04/2 Deposit 0000000 Lançamento de Deposito  RUTH PASSOS        70,00
+  000035 30/04/2 Transfe 0000002 Lançamento de Transfere RUTH PASSOS      -100,00
+  000034 30/04/2 Deposit 0000000 Lançamento de Deposito  RUTH PASSOS       600,00
+
+                                            250.0               SUBTOTAL =-5.984,
+  BANCO DO BRASIL
+  000036 30/04/2 Transfe 0000002 Lançamento de Transfere RUTH PASSOS       100,00
+
+                                            250.0               SUBTOTAL = 100,00
+
+
+
+
+
+
+                                                                TOTAL ==> -5.884,
+  04/05/10 09:37
+                              Pagina 1 de 1
+
+
+

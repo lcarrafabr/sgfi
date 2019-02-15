@@ -1,0 +1,683 @@
+/*
+ * SGFIView.java
+ */
+
+package sgfi;
+
+import java.sql.Connection;
+import org.jdesktop.application.Action;
+import org.jdesktop.application.ResourceMap;
+import org.jdesktop.application.SingleFrameApplication;
+import org.jdesktop.application.FrameView;
+import org.jdesktop.application.TaskMonitor;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.net.URL;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.text.DecimalFormat;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.Timer;
+import javax.swing.Icon;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+import net.sf.jasperreports.engine.JRException;
+import net.sf.jasperreports.engine.JRResultSetDataSource;
+import net.sf.jasperreports.engine.JasperFillManager;
+import net.sf.jasperreports.engine.JasperManager;
+import net.sf.jasperreports.engine.JasperPrint;
+import net.sf.jasperreports.engine.JasperReport;
+import net.sf.jasperreports.view.JasperViewer;
+import sgfi.Classes.ClassConecta;
+import sgfi.Classes.Comunidade;
+import sgfi.Classes.Contas;
+import sgfi.Classes.Pessoas;
+
+/**
+ * The application's main frame.
+ */
+public class SGFIView extends FrameView {
+
+    public SGFIView(SingleFrameApplication app) {
+        super(app);
+
+        initComponents();
+
+        ActionListener tarefa = (new ActionListener(){
+        public void actionPerformed(ActionEvent e){
+        HORAS();
+        }
+        });
+
+        javax.swing.Timer time = new javax.swing.Timer(1000,tarefa);
+        time.start();
+
+        // status bar initialization - message timeout, idle icon and busy animation, etc
+        ResourceMap resourceMap = getResourceMap();
+        int messageTimeout = resourceMap.getInteger("StatusBar.messageTimeout");
+        messageTimer = new Timer(messageTimeout, new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                statusMessageLabel.setText("");
+            }
+        });
+        messageTimer.setRepeats(false);
+        int busyAnimationRate = resourceMap.getInteger("StatusBar.busyAnimationRate");
+        for (int i = 0; i < busyIcons.length; i++) {
+            busyIcons[i] = resourceMap.getIcon("StatusBar.busyIcons[" + i + "]");
+        }
+        busyIconTimer = new Timer(busyAnimationRate, new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                busyIconIndex = (busyIconIndex + 1) % busyIcons.length;
+                statusAnimationLabel.setIcon(busyIcons[busyIconIndex]);
+            }
+        });
+        idleIcon = resourceMap.getIcon("StatusBar.idleIcon");
+        statusAnimationLabel.setIcon(idleIcon);
+        progressBar.setVisible(false);
+
+        // connecting action tasks to status bar via TaskMonitor
+        TaskMonitor taskMonitor = new TaskMonitor(getApplication().getContext());
+        taskMonitor.addPropertyChangeListener(new java.beans.PropertyChangeListener() {
+            public void propertyChange(java.beans.PropertyChangeEvent evt) {
+                String propertyName = evt.getPropertyName();
+                if ("started".equals(propertyName)) {
+                    if (!busyIconTimer.isRunning()) {
+                        statusAnimationLabel.setIcon(busyIcons[0]);
+                        busyIconIndex = 0;
+                        busyIconTimer.start();
+                    }
+                    progressBar.setVisible(true);
+                    progressBar.setIndeterminate(true);
+                } else if ("done".equals(propertyName)) {
+                    busyIconTimer.stop();
+                    statusAnimationLabel.setIcon(idleIcon);
+                    progressBar.setVisible(false);
+                    progressBar.setValue(0);
+                } else if ("message".equals(propertyName)) {
+                    String text = (String)(evt.getNewValue());
+                    statusMessageLabel.setText((text == null) ? "" : text);
+                    messageTimer.restart();
+                } else if ("progress".equals(propertyName)) {
+                    int value = (Integer)(evt.getNewValue());
+                    progressBar.setVisible(true);
+                    progressBar.setIndeterminate(false);
+                    progressBar.setValue(value);
+                }
+            }
+        });
+    }
+
+    @Action
+    public void showAboutBox() {
+        if (aboutBox == null) {
+            JFrame mainFrame = SGFIApp.getApplication().getMainFrame();
+            aboutBox = new SGFIAboutBox(mainFrame);
+            aboutBox.setLocationRelativeTo(mainFrame);
+        }
+        SGFIApp.getApplication().show(aboutBox);
+    }
+
+    /** This method is called from within the constructor to
+     * initialize the form.
+     * WARNING: Do NOT modify this code. The content of this method is
+     * always regenerated by the Form Editor.
+     */
+    @SuppressWarnings("unchecked")
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+    private void initComponents() {
+
+        mainPanel = new javax.swing.JPanel();
+        jDesktopPane1 = new javax.swing.JDesktopPane();
+        jButton1 = new javax.swing.JButton();
+        igrejasjButton = new javax.swing.JButton();
+        pessoasjButton = new javax.swing.JButton();
+        jButton4 = new javax.swing.JButton();
+        jButton5 = new javax.swing.JButton();
+        horajLabel = new javax.swing.JLabel();
+        menuBar = new javax.swing.JMenuBar();
+        javax.swing.JMenu fileMenu = new javax.swing.JMenu();
+        jMenuItem1 = new javax.swing.JMenuItem();
+        jMenuItem2 = new javax.swing.JMenuItem();
+        jMenuItem3 = new javax.swing.JMenuItem();
+        jMenuItem4 = new javax.swing.JMenuItem();
+        javax.swing.JMenuItem exitMenuItem = new javax.swing.JMenuItem();
+        jMenu2 = new javax.swing.JMenu();
+        jMenuItem5 = new javax.swing.JMenuItem();
+        jMenuItem7 = new javax.swing.JMenuItem();
+        jMenuItem8 = new javax.swing.JMenuItem();
+        jMenuItem6 = new javax.swing.JMenuItem();
+        javax.swing.JMenu helpMenu = new javax.swing.JMenu();
+        javax.swing.JMenuItem aboutMenuItem = new javax.swing.JMenuItem();
+        statusPanel = new javax.swing.JPanel();
+        javax.swing.JSeparator statusPanelSeparator = new javax.swing.JSeparator();
+        statusMessageLabel = new javax.swing.JLabel();
+        statusAnimationLabel = new javax.swing.JLabel();
+        progressBar = new javax.swing.JProgressBar();
+
+        mainPanel.setName("mainPanel"); // NOI18N
+
+        org.jdesktop.application.ResourceMap resourceMap = org.jdesktop.application.Application.getInstance(sgfi.SGFIApp.class).getContext().getResourceMap(SGFIView.class);
+        jDesktopPane1.setBorder(new javax.swing.border.MatteBorder(resourceMap.getIcon("jDesktopPane1.border.tileIcon"))); // NOI18N
+        jDesktopPane1.setName("jDesktopPane1"); // NOI18N
+
+        jButton1.setIcon(resourceMap.getIcon("jButton1.icon")); // NOI18N
+        jButton1.setText(resourceMap.getString("jButton1.text")); // NOI18N
+        jButton1.setContentAreaFilled(false);
+        jButton1.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        jButton1.setName("jButton1"); // NOI18N
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton1ActionPerformed(evt);
+            }
+        });
+        jButton1.setBounds(790, 450, 70, 60);
+        jDesktopPane1.add(jButton1, javax.swing.JLayeredPane.DEFAULT_LAYER);
+
+        igrejasjButton.setIcon(resourceMap.getIcon("igrejasjButton.icon")); // NOI18N
+        igrejasjButton.setContentAreaFilled(false);
+        igrejasjButton.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        igrejasjButton.setName("igrejasjButton"); // NOI18N
+        igrejasjButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                igrejasjButtonActionPerformed(evt);
+            }
+        });
+        igrejasjButton.setBounds(430, 450, 70, 60);
+        jDesktopPane1.add(igrejasjButton, javax.swing.JLayeredPane.DEFAULT_LAYER);
+
+        pessoasjButton.setIcon(resourceMap.getIcon("pessoasjButton.icon")); // NOI18N
+        pessoasjButton.setContentAreaFilled(false);
+        pessoasjButton.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        pessoasjButton.setName("pessoasjButton"); // NOI18N
+        pessoasjButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                pessoasjButtonActionPerformed(evt);
+            }
+        });
+        pessoasjButton.setBounds(530, 450, 70, 60);
+        jDesktopPane1.add(pessoasjButton, javax.swing.JLayeredPane.DEFAULT_LAYER);
+
+        jButton4.setIcon(resourceMap.getIcon("jButton4.icon")); // NOI18N
+        jButton4.setContentAreaFilled(false);
+        jButton4.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        jButton4.setName("jButton4"); // NOI18N
+        jButton4.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton4ActionPerformed(evt);
+            }
+        });
+        jButton4.setBounds(620, 450, 70, 60);
+        jDesktopPane1.add(jButton4, javax.swing.JLayeredPane.DEFAULT_LAYER);
+
+        jButton5.setIcon(resourceMap.getIcon("jButton5.icon")); // NOI18N
+        jButton5.setContentAreaFilled(false);
+        jButton5.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        jButton5.setName("jButton5"); // NOI18N
+        jButton5.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton5ActionPerformed(evt);
+            }
+        });
+        jButton5.setBounds(710, 450, 70, 60);
+        jDesktopPane1.add(jButton5, javax.swing.JLayeredPane.DEFAULT_LAYER);
+
+        horajLabel.setText(resourceMap.getString("horajLabel.text")); // NOI18N
+        horajLabel.setName("horajLabel"); // NOI18N
+        horajLabel.setBounds(430, 530, 90, 30);
+        jDesktopPane1.add(horajLabel, javax.swing.JLayeredPane.DEFAULT_LAYER);
+
+        javax.swing.GroupLayout mainPanelLayout = new javax.swing.GroupLayout(mainPanel);
+        mainPanel.setLayout(mainPanelLayout);
+        mainPanelLayout.setHorizontalGroup(
+            mainPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(jDesktopPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 969, Short.MAX_VALUE)
+        );
+        mainPanelLayout.setVerticalGroup(
+            mainPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(jDesktopPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 570, Short.MAX_VALUE)
+        );
+
+        menuBar.setName("menuBar"); // NOI18N
+
+        fileMenu.setText(resourceMap.getString("fileMenu.text")); // NOI18N
+        fileMenu.setName("fileMenu"); // NOI18N
+        fileMenu.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                fileMenuActionPerformed(evt);
+            }
+        });
+
+        jMenuItem1.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F2, 0));
+        jMenuItem1.setIcon(resourceMap.getIcon("jMenuItem1.icon")); // NOI18N
+        jMenuItem1.setText(resourceMap.getString("jMenuItem1.text")); // NOI18N
+        jMenuItem1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem1ActionPerformed(evt);
+            }
+        });
+        fileMenu.add(jMenuItem1);
+
+        jMenuItem2.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F3, 0));
+        jMenuItem2.setIcon(resourceMap.getIcon("jMenuItem2.icon")); // NOI18N
+        jMenuItem2.setText(resourceMap.getString("jMenuItem2.text")); // NOI18N
+        jMenuItem2.setName("jMenuItem2"); // NOI18N
+        jMenuItem2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem2ActionPerformed(evt);
+            }
+        });
+        fileMenu.add(jMenuItem2);
+
+        jMenuItem3.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F4, 0));
+        jMenuItem3.setIcon(resourceMap.getIcon("jMenuItem3.icon")); // NOI18N
+        jMenuItem3.setText(resourceMap.getString("jMenuItem3.text")); // NOI18N
+        jMenuItem3.setName("jMenuItem3"); // NOI18N
+        jMenuItem3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem3ActionPerformed(evt);
+            }
+        });
+        fileMenu.add(jMenuItem3);
+
+        jMenuItem4.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F5, 0));
+        jMenuItem4.setIcon(resourceMap.getIcon("jMenuItem4.icon")); // NOI18N
+        jMenuItem4.setText(resourceMap.getString("jMenuItem4.text")); // NOI18N
+        jMenuItem4.setName("jMenuItem4"); // NOI18N
+        jMenuItem4.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem4ActionPerformed(evt);
+            }
+        });
+        fileMenu.add(jMenuItem4);
+
+        javax.swing.ActionMap actionMap = org.jdesktop.application.Application.getInstance(sgfi.SGFIApp.class).getContext().getActionMap(SGFIView.class, this);
+        exitMenuItem.setAction(actionMap.get("quit")); // NOI18N
+        exitMenuItem.setIcon(resourceMap.getIcon("exitMenuItem.icon")); // NOI18N
+        exitMenuItem.setText(resourceMap.getString("exitMenuItem.text")); // NOI18N
+        exitMenuItem.setName("exitMenuItem"); // NOI18N
+        fileMenu.add(exitMenuItem);
+
+        menuBar.add(fileMenu);
+
+        jMenu2.setText(resourceMap.getString("jMenu2.text")); // NOI18N
+        jMenu2.setName("jMenu2"); // NOI18N
+
+        jMenuItem5.setIcon(resourceMap.getIcon("jMenuItem5.icon")); // NOI18N
+        jMenuItem5.setText(resourceMap.getString("jMenuItem5.text")); // NOI18N
+        jMenuItem5.setName("jMenuItem5"); // NOI18N
+        jMenuItem5.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem5ActionPerformed(evt);
+            }
+        });
+        jMenu2.add(jMenuItem5);
+
+        jMenuItem7.setIcon(resourceMap.getIcon("jMenuItem7.icon")); // NOI18N
+        jMenuItem7.setText(resourceMap.getString("jMenuItem7.text")); // NOI18N
+        jMenuItem7.setName("jMenuItem7"); // NOI18N
+        jMenuItem7.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem7ActionPerformed(evt);
+            }
+        });
+        jMenu2.add(jMenuItem7);
+
+        jMenuItem8.setIcon(resourceMap.getIcon("jMenuItem8.icon")); // NOI18N
+        jMenuItem8.setText(resourceMap.getString("jMenuItem8.text")); // NOI18N
+        jMenuItem8.setName("jMenuItem8"); // NOI18N
+        jMenuItem8.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem8ActionPerformed(evt);
+            }
+        });
+        jMenu2.add(jMenuItem8);
+
+        jMenuItem6.setIcon(resourceMap.getIcon("jMenuItem6.icon")); // NOI18N
+        jMenuItem6.setText(resourceMap.getString("jMenuItem6.text")); // NOI18N
+        jMenuItem6.setName("jMenuItem6"); // NOI18N
+        jMenuItem6.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem6ActionPerformed(evt);
+            }
+        });
+        jMenu2.add(jMenuItem6);
+
+        menuBar.add(jMenu2);
+
+        helpMenu.setText(resourceMap.getString("helpMenu.text")); // NOI18N
+        helpMenu.setName("helpMenu"); // NOI18N
+
+        aboutMenuItem.setAction(actionMap.get("showAboutBox")); // NOI18N
+        aboutMenuItem.setText(resourceMap.getString("aboutMenuItem.text")); // NOI18N
+        aboutMenuItem.setName("aboutMenuItem"); // NOI18N
+        helpMenu.add(aboutMenuItem);
+
+        menuBar.add(helpMenu);
+
+        statusPanel.setName("statusPanel"); // NOI18N
+
+        statusPanelSeparator.setName("statusPanelSeparator"); // NOI18N
+
+        statusMessageLabel.setName("statusMessageLabel"); // NOI18N
+
+        statusAnimationLabel.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        statusAnimationLabel.setName("statusAnimationLabel"); // NOI18N
+
+        progressBar.setName("progressBar"); // NOI18N
+
+        javax.swing.GroupLayout statusPanelLayout = new javax.swing.GroupLayout(statusPanel);
+        statusPanel.setLayout(statusPanelLayout);
+        statusPanelLayout.setHorizontalGroup(
+            statusPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(statusPanelSeparator, javax.swing.GroupLayout.DEFAULT_SIZE, 969, Short.MAX_VALUE)
+            .addGroup(statusPanelLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(statusMessageLabel)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 799, Short.MAX_VALUE)
+                .addComponent(progressBar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(statusAnimationLabel)
+                .addContainerGap())
+        );
+        statusPanelLayout.setVerticalGroup(
+            statusPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(statusPanelLayout.createSequentialGroup()
+                .addComponent(statusPanelSeparator, javax.swing.GroupLayout.PREFERRED_SIZE, 2, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGroup(statusPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(statusMessageLabel)
+                    .addComponent(statusAnimationLabel)
+                    .addComponent(progressBar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(3, 3, 3))
+        );
+
+        setComponent(mainPanel);
+        setMenuBar(menuBar);
+        setStatusBar(statusPanel);
+    }// </editor-fold>//GEN-END:initComponents
+
+    public ClassConecta conexao = new ClassConecta();
+
+int hh,mm,ss,h;
+Calendar CalendarHora;
+DecimalFormat formato;
+
+//Criando variáveis do tipo dos frames para depois instancia-las
+jFContas oConta;
+jFComunidades oComunidade;
+jFCaixa oCaixa;
+jFPessoas oPessoa;
+
+private void HORAS(){
+CalendarHora = Calendar.getInstance();
+hh = CalendarHora.get(Calendar.HOUR_OF_DAY);
+mm = CalendarHora.get(Calendar.MINUTE);
+ss = CalendarHora.get(Calendar.SECOND);
+formato = new DecimalFormat("00");
+horajLabel.setText("Hora: "+formatar(hh)+":"+formatar(mm)+":"+formatar(ss));
+//horajLabel.setText("Hora: "+formatar(hh%12)+":"+formatar(mm)+":"+formatar(ss)); <<== Usar este modelo quando quizer horario (am - pm)
+}
+
+public String formatar(int num){
+formato = new DecimalFormat("00");
+return formato.format(num);
+}
+
+
+
+
+
+
+    private void fileMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_fileMenuActionPerformed
+        // TODO add your handling code here:
+
+    }//GEN-LAST:event_fileMenuActionPerformed
+
+    private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
+        // TODO add your handling code here:
+        oComunidade = new jFComunidades();
+        oComunidade.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        oComunidade.pack();
+        oComunidade.setLocationRelativeTo(null);
+        oComunidade.setVisible(true);
+    }//GEN-LAST:event_jMenuItem1ActionPerformed
+
+    private void jMenuItem2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem2ActionPerformed
+        // TODO add your handling code here:
+        oPessoa = new jFPessoas();
+        oPessoa.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        oPessoa.pack();
+        oPessoa.setLocationRelativeTo(null);
+        oPessoa.setVisible(true);
+    }//GEN-LAST:event_jMenuItem2ActionPerformed
+
+    private void jMenuItem3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem3ActionPerformed
+        // TODO add your handling code here:
+        oConta = new jFContas();
+        oConta.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        oConta.pack();
+        oConta.setLocationRelativeTo(null);
+        oConta.setVisible(true);
+    }//GEN-LAST:event_jMenuItem3ActionPerformed
+
+    private void jMenuItem4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem4ActionPerformed
+        // TODO add your handling code here:
+        oCaixa = new jFCaixa();
+        oCaixa.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        oCaixa.pack();
+        oCaixa.setLocationRelativeTo(null);
+        oCaixa.setVisible(true);
+    }//GEN-LAST:event_jMenuItem4ActionPerformed
+
+    private void jMenuItem5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem5ActionPerformed
+        // TODO add your handling code here:
+          ClassConecta.conecta();
+        try {
+                String caminhoRelJasper = "resources/rComunidade.jasper";
+                ResultSet rs;
+            try {
+                Comunidade oRComunidade = new Comunidade();
+
+                rs = oRComunidade.getConsultar();
+
+                JRResultSetDataSource ds = new JRResultSetDataSource(rs);
+
+                URL arquivo = getClass().getResource(caminhoRelJasper);
+
+                if (arquivo == null)
+                JOptionPane.showMessageDialog(null,"Arquivo jasper não encontrado");
+                JasperReport report;
+            try {
+
+                    report = JasperManager.loadReport(arquivo.openStream());
+                    JasperPrint jasperPrint = JasperFillManager.fillReport(report, new HashMap(), ds);
+                    JasperViewer jrviewer = new JasperViewer(jasperPrint, false);
+                    jrviewer.setVisible(true);
+
+
+            } catch (JRException ex) {
+                Logger.getLogger(jFComunidades.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+            } catch (IOException ex) {
+                Logger.getLogger(jFComunidades.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+
+            } catch (SQLException ex) {
+               Logger.getLogger(jFComunidades.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+
+        
+    }//GEN-LAST:event_jMenuItem5ActionPerformed
+
+    private void pessoasjButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_pessoasjButtonActionPerformed
+        // TODO add your handling code here:
+        oPessoa = new jFPessoas();
+        oPessoa.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        oPessoa.pack();
+        oPessoa.setLocationRelativeTo(null);
+        oPessoa.setVisible(true);
+    }//GEN-LAST:event_pessoasjButtonActionPerformed
+
+    private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
+        // TODO add your handling code here:
+        oConta = new jFContas();
+        oConta.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        oConta.pack();
+        oConta.setLocationRelativeTo(null);
+        oConta.setVisible(true);
+    }//GEN-LAST:event_jButton4ActionPerformed
+
+    private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
+        // TODO add your handling code here:
+        oCaixa = new jFCaixa();
+        oCaixa.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        oCaixa.pack();
+        oCaixa.setLocationRelativeTo(null);
+        oCaixa.setVisible(true);
+    }//GEN-LAST:event_jButton5ActionPerformed
+
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+        // TODO add your handling code here:
+        System.exit(0);
+    }//GEN-LAST:event_jButton1ActionPerformed
+
+    private void igrejasjButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_igrejasjButtonActionPerformed
+        // TODO add your handling code here:
+        oComunidade = new jFComunidades();
+        oComunidade.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        oComunidade.pack();
+        oComunidade.setLocationRelativeTo(null);
+        oComunidade.setVisible(true);
+    }//GEN-LAST:event_igrejasjButtonActionPerformed
+
+    private void jMenuItem6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem6ActionPerformed
+        // TODO add your handling code here:
+        jFRLivroCaixa oJRLivroCaixa = new jFRLivroCaixa();
+        oJRLivroCaixa.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        oJRLivroCaixa.pack();
+        oJRLivroCaixa.setLocationRelativeTo(null);
+        oJRLivroCaixa.setVisible(true);
+    }//GEN-LAST:event_jMenuItem6ActionPerformed
+
+    private void jMenuItem7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem7ActionPerformed
+        // TODO add your handling code here:
+        ClassConecta.conecta();
+        try {
+                String caminhoRelJasper = "resources/rPessoas.jasper";
+                ResultSet rs;
+            try {
+                Pessoas oRPessoa = new Pessoas();
+
+                rs = oRPessoa.getConsultar();
+
+                JRResultSetDataSource ds = new JRResultSetDataSource(rs);
+
+                URL arquivo = getClass().getResource(caminhoRelJasper);
+
+                if (arquivo == null)
+                JOptionPane.showMessageDialog(null,"Arquivo jasper não encontrado");
+                JasperReport report;
+            try {
+
+                    report = JasperManager.loadReport(arquivo.openStream());
+                    JasperPrint jasperPrint = JasperFillManager.fillReport(report, new HashMap(), ds);
+                    JasperViewer jrviewer = new JasperViewer(jasperPrint, false);
+                    jrviewer.setVisible(true);
+
+
+            } catch (JRException ex) {
+                Logger.getLogger(jFPessoas.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+            } catch (IOException ex) {
+                Logger.getLogger(jFPessoas.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+
+            } catch (SQLException ex) {
+               Logger.getLogger(jFPessoas.class.getName()).log(Level.SEVERE, null, ex);
+            }
+    }//GEN-LAST:event_jMenuItem7ActionPerformed
+
+    private void jMenuItem8ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem8ActionPerformed
+        // TODO add your handling code here:
+        ClassConecta.conecta();
+
+        try {
+                String caminhoRelJasper = "resources/rContas.jasper";
+                ResultSet rs;
+            try {
+                Contas oRConta = new Contas();
+
+                rs = oRConta.getConsultar();
+
+                JRResultSetDataSource ds = new JRResultSetDataSource(rs);
+
+                URL arquivo = getClass().getResource(caminhoRelJasper);
+
+                if (arquivo == null)
+                JOptionPane.showMessageDialog(null,"Arquivo jasper não encontrado");
+                JasperReport report;
+            try {
+
+                    report = JasperManager.loadReport(arquivo.openStream());
+                    JasperPrint jasperPrint = JasperFillManager.fillReport(report, new HashMap(), ds);
+                    JasperViewer jrviewer = new JasperViewer(jasperPrint, false);
+                    jrviewer.setVisible(true);
+
+
+            } catch (JRException ex) {
+                Logger.getLogger(jFContas.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+            } catch (IOException ex) {
+                Logger.getLogger(jFContas.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+
+            } catch (SQLException ex) {
+               Logger.getLogger(jFContas.class.getName()).log(Level.SEVERE, null, ex);
+            }
+    }//GEN-LAST:event_jMenuItem8ActionPerformed
+
+    // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JLabel horajLabel;
+    private javax.swing.JButton igrejasjButton;
+    private javax.swing.JButton jButton1;
+    private javax.swing.JButton jButton4;
+    private javax.swing.JButton jButton5;
+    private javax.swing.JDesktopPane jDesktopPane1;
+    private javax.swing.JMenu jMenu2;
+    private javax.swing.JMenuItem jMenuItem1;
+    private javax.swing.JMenuItem jMenuItem2;
+    private javax.swing.JMenuItem jMenuItem3;
+    private javax.swing.JMenuItem jMenuItem4;
+    private javax.swing.JMenuItem jMenuItem5;
+    private javax.swing.JMenuItem jMenuItem6;
+    private javax.swing.JMenuItem jMenuItem7;
+    private javax.swing.JMenuItem jMenuItem8;
+    private javax.swing.JPanel mainPanel;
+    private javax.swing.JMenuBar menuBar;
+    private javax.swing.JButton pessoasjButton;
+    private javax.swing.JProgressBar progressBar;
+    private javax.swing.JLabel statusAnimationLabel;
+    private javax.swing.JLabel statusMessageLabel;
+    private javax.swing.JPanel statusPanel;
+    // End of variables declaration//GEN-END:variables
+
+    private final Timer messageTimer;
+    private final Timer busyIconTimer;
+    private final Icon idleIcon;
+    private final Icon[] busyIcons = new Icon[15];
+    private int busyIconIndex = 0;
+
+    private JDialog aboutBox;
+}
